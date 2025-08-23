@@ -32,9 +32,7 @@ const App = () => {
 			}>
 			<ArticleParamsForm
 				initialState={articleState}
-				onApply={(newState: ArticleStateType) => {
-					setArticleState(newState);
-				}}
+				onApply={setArticleState}
 			/>
 			<Article />
 		</main>
