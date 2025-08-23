@@ -1,16 +1,158 @@
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
-
+import { useState, useEffect, RefObject, useRef } from 'react';
+import clsx from 'clsx';
 import styles from './ArticleParamsForm.module.scss';
+import { RadioGroup } from 'src/ui/radio-group/RadioGroup';
+import {
+	fontSizeOptions,
+	fontFamilyOptions,
+	fontColors,
+	backgroundColors,
+	contentWidthArr,
+	ArticleStateType,
+	defaultArticleState,
+} from 'src/constants/articleProps';
+import { Select } from 'src/ui/select/Select';
+import { Separator } from 'src/ui/separator/Separator';
+import { Text } from 'src/ui/text/Text';
 
-export const ArticleParamsForm = () => {
+// Кастомный хук закрытия модального окна
+const useOnClickOutside = (
+	ref: RefObject<HTMLElement>,
+	handler: (event: MouseEvent) => void
+) => {
+	useEffect(() => {
+		const listener = (event: MouseEvent) => {
+			if (!ref.current || ref.current.contains(event.target as Node)) {
+				return;
+			}
+			handler(event);
+		};
+		document.addEventListener('mousedown', listener);
+
+		return () => {
+			document.removeEventListener('mousedown', listener);
+		};
+	}, [ref, handler]);
+};
+
+// Интрефейс для типизации пропсов, передававемых в форму
+interface initialStateFormProps {
+	initialState: ArticleStateType;
+	onApply: (params: ArticleStateType) => void;
+}
+
+export const ArticleParamsForm = ({
+	initialState,
+	onApply,
+}: initialStateFormProps) => {
+	// Создаем место для хранения предворительных настроек модального окна
+	const [isOpen, setIsOpen] = useState(false);
+
+	// Создаем место для хранения новых параметров страницы
+	const [newArticleState, setNewArticleState] =
+		useState<ArticleStateType>(initialState);
+
+	// Синхронизируем изменения
+	useEffect(() => {
+		setNewArticleState(initialState);
+	}, [initialState]);
+
+	// Закрываем модальное окно по клику снаружи
+	const sidebarRef = useRef<HTMLDivElement>(null);
+
+	// Синхронизируем изменения
+	useOnClickOutside(sidebarRef, () => {
+		if (isOpen) {
+			setIsOpen(false);
+		}
+	});
+
+	// Применяем параметры только здесь
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		onApply(newArticleState);
+		setIsOpen(false);
+	};
+
+	// Полный сброс к дефолтным значениям
+	const handleFullReset = () => {
+		setNewArticleState(defaultArticleState);
+		onApply(defaultArticleState);
+		setIsOpen(false);
+	};
+
 	return (
 		<>
-			<ArrowButton isOpen={false} onClick={() => {}} />
-			<aside className={styles.container}>
-				<form className={styles.form}>
+			<ArrowButton
+				isOpen={isOpen}
+				onClick={() => {
+					setIsOpen((prev) => !prev);
+				}}
+			/>
+			<aside
+				ref={sidebarRef}
+				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
+				<form className={styles.form} onSubmit={handleSubmit}>
+					<Text as='h2' size={31} weight={800} uppercase>
+						Задайте параметры
+					</Text>
+					<Select
+						selected={newArticleState.fontFamilyOption}
+						onChange={(value) =>
+							setNewArticleState((prev) => ({
+								...prev,
+								fontFamilyOption: value,
+							}))
+						}
+						options={fontFamilyOptions}
+						title='Шрифт'
+					/>
+					<RadioGroup
+						selected={newArticleState.fontSizeOption}
+						name='radio'
+						onChange={(value) =>
+							setNewArticleState((prev) => ({ ...prev, fontSizeOption: value }))
+						}
+						options={fontSizeOptions}
+						title='Размер шрифта'
+					/>
+					<Select
+						selected={newArticleState.fontColor}
+						onChange={(value) =>
+							setNewArticleState((prev) => ({ ...prev, fontColor: value }))
+						}
+						options={fontColors}
+						title='Цвет шрифта'
+					/>
+					<Separator />
+					<Select
+						selected={newArticleState.backgroundColor}
+						onChange={(value) =>
+							setNewArticleState((prev) => ({
+								...prev,
+								backgroundColor: value,
+							}))
+						}
+						options={backgroundColors}
+						title='Цвет фона'
+					/>
+					<Select
+						selected={newArticleState.contentWidth}
+						onChange={(value) =>
+							setNewArticleState((prev) => ({ ...prev, contentWidth: value }))
+						}
+						options={contentWidthArr}
+						title='Ширина контента'
+					/>
 					<div className={styles.bottomContainer}>
-						<Button title='Сбросить' htmlType='reset' type='clear' />
+						<Button
+							title='Сбросить'
+							htmlType='reset'
+							type='clear'
+							onClick={handleFullReset}
+						/>
 						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
 				</form>
