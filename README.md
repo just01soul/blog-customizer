@@ -50,6 +50,11 @@ npm run lint
 ```
 npm run format
 ```
+Для запуска Проекта выполните:
+
+```
+npm run start
+```
 
 ### Скриншот
 
